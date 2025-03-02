@@ -29,6 +29,8 @@ namespace I2VISTools.Config
         public int YBegin { get; set; }
         public int YEnd { get; set; }
 
+        public int Transparency { get; set; }
+
         public List<double> Isoterms { get; set; } 
 
         public List<string> PrnParameters = new List<string>() { "pr","vx","vy","exx","eyy","exy","sxx","syy","sxy","ro", "nu","nd", "mu", "ep", "et", "pr0", "prb", "dv","tk", "cp", "kt", "ht", "txt" };

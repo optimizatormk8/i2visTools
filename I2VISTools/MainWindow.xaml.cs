@@ -61,8 +61,7 @@ namespace I2VISTools
 
         private LineSeries _ruleX;
         private LineSeries _ruleY;
-
-        private HIstoryView _history = new HIstoryView();
+        
         //private HistoryLog _bufferLog;
 
         private bool _isNewBoxAdding = false;
@@ -119,6 +118,10 @@ namespace I2VISTools
             GeologyConfig.Instace.LoadFacies();
             GeologyConfig.Instace.LoadPhases();
 
+            InitEditorHelper.GeometryDataGrid = GeometryDataGrid;
+            InitEditorHelper.ThermoDataGrid = GeothermsDataGrid;
+            InitEditorHelper.GeothermsBox = GeothermsBox;
+            
         }
 
 
@@ -518,87 +521,15 @@ namespace I2VISTools
                     points.Points.Add(new DataPoint(rockBox.Apex2.X, rockBox.Apex2.Y));
                     points.Points.Add(new DataPoint(rockBox.Apex0.X, rockBox.Apex0.Y));
                     
-                    AttachMovingEvents(points);
-                    AttachChangeEvents(rockBox);
+                    InitEditorHelper.AttachMovingEvents(_currentConfig, _graphModel, points);
+                    InitEditorHelper.AttachChangeEvents(_graphModel, rockBox);
                     
                     points.IsVisible = (NodesVisibilityBox.IsChecked == true);
 
                     _graphModel.Series.Add(points);
                 }
 
-                foreach (var termoBox in _currentConfig.Geotherms)
-                {
-                    var points = new LineSeries
-                    {
-                        Tag = termoBox.Name,
-                        MarkerFill = OxyColors.Orange,
-                        MarkerType = MarkerType.Square,
-                        MarkerSize = 4,
-                        Color = OxyColors.Orange
-                    };
-                    points.Points.Add(new DataPoint(termoBox.Apex0.X, termoBox.Apex0.Y));
-                    points.Points.Add(new DataPoint(termoBox.Apex1.X, termoBox.Apex1.Y));
-                    points.Points.Add(new DataPoint(termoBox.Apex3.X, termoBox.Apex3.Y));
-                    points.Points.Add(new DataPoint(termoBox.Apex2.X, termoBox.Apex2.Y));
-                    points.Points.Add(new DataPoint(termoBox.Apex0.X, termoBox.Apex0.Y));
-
-
-                    var t0 = new PointAnnotation
-                    {
-                        X = termoBox.Apex0.X,
-                        Y = termoBox.Apex0.Y,
-                        Text = termoBox.T0.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = termoBox.Name + "T0"
-                    };
-
-                    var t1 = new PointAnnotation
-                    {
-                        X = termoBox.Apex1.X,
-                        Y = termoBox.Apex1.Y,
-                        Text = termoBox.T1.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = termoBox.Name + "T1"
-                    };
-
-                    var t2 = new PointAnnotation
-                    {
-                        X = termoBox.Apex2.X,
-                        Y = termoBox.Apex2.Y,
-                        Text = termoBox.T2.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = termoBox.Name + "T2"
-                    };
-
-                    var t3 = new PointAnnotation
-                    {
-                        X = termoBox.Apex3.X,
-                        Y = termoBox.Apex3.Y,
-                        Text = termoBox.T3.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = termoBox.Name + "T3"
-                    };
-
-                    _graphModel.Annotations.Add(t0);
-                    _graphModel.Annotations.Add(t1);
-                    _graphModel.Annotations.Add(t2);
-                    _graphModel.Annotations.Add(t3);
-
-                    AttachMovingEvents(points);
-
-                    points.IsVisible = (GeothermsBox.IsChecked == true);
-                    foreach (var annotation in _graphModel.Annotations)
-                    {
-                        annotation.TextColor = (GeothermsBox.IsChecked == true) ? OxyColors.Red : OxyColors.Transparent;
-                    }
-
-                    AttachChangeEvents(termoBox);
-                    _graphModel.Series.Add(points);
-                }
+                InitEditorHelper.AttachThermopointsEvents(_currentConfig, _graphModel);
 
                 _graphModel.MouseDown += (s, ev) =>
                 {
@@ -670,21 +601,7 @@ namespace I2VISTools
                                 GeometryDataGrid.SelectedIndex = ind;
 
                                 _graphModel.InvalidatePlot(false);
-
                                 
-                                //if (_selectedContour != null && ev.IsControlDown)
-                                //{
-                                //    _readyForDrag = true;
-                                //    _dragPt = _selectedContour.InverseTransform(ev.Position);
-
-                                //    _startDragRectPosition = new List<ModPoint>
-                                //    {
-                                //        new ModPoint(_selectedContour.Points[0].X, _selectedContour.Points[0].Y),
-                                //        new ModPoint(_selectedContour.Points[1].X, _selectedContour.Points[1].Y),
-                                //        new ModPoint(_selectedContour.Points[3].X, _selectedContour.Points[3].Y),
-                                //        new ModPoint(_selectedContour.Points[2].X, _selectedContour.Points[2].Y)
-                                //    };
-                                //}
                             }
                         }
                         else
@@ -717,8 +634,6 @@ namespace I2VISTools
                                     Y = _newBoxSeria.Points[0].Y
                                 };
                                 _newBoxSeria.Points.Add(lastPt);
-                                //_graphModel.Series.Add(_newBoxSeria);
-                                //_newBoxSeria = null;
                                 _isNewBoxAdding = false;
 
                                 var menu = new ContextMenu();
@@ -784,8 +699,8 @@ namespace I2VISTools
 
                                         _graphModel.Series.Insert(countourInd, _newBoxSeria);
 
-                                        AttachMovingEvents(_newBoxSeria);
-                                        AttachChangeEvents(rb);
+                                        InitEditorHelper.AttachMovingEvents(_currentConfig, _graphModel, _newBoxSeria);
+                                        InitEditorHelper.AttachChangeEvents(_graphModel, rb);
                                         GeometryDataGrid.Items.Refresh();
                                         _graphModel.InvalidatePlot(false);
 
@@ -843,7 +758,7 @@ namespace I2VISTools
                             Undo = FormUndo(rb, oldVals),
                             Do = FormRedo(rb, newVals)
                         };
-                        _history.Logs.Add(hl);
+                        InitEditorHelper.History.Logs.Add(hl);
 
                     }
 
@@ -907,7 +822,7 @@ namespace I2VISTools
                                         Undo = FormUndo(rb, oldVals),
                                         Do = FormRedo(rb, newVals)
                                     };
-                                    _history.Logs.Add(hl);
+                                    InitEditorHelper.History.Logs.Add(hl);
                                 }
 
 
@@ -932,7 +847,7 @@ namespace I2VISTools
                                         Undo = FormUndo(rb, oldVals),
                                         Do = FormRedo(rb, newVals)
                                     };
-                                    _history.Logs.Add(hl);
+                                    InitEditorHelper.History.Logs.Add(hl);
                                 }
 
 
@@ -956,7 +871,7 @@ namespace I2VISTools
                                         Undo = FormUndo(rb, oldVals),
                                         Do = FormRedo(rb, newVals)
                                     };
-                                    _history.Logs.Add(hl);
+                                    InitEditorHelper.History.Logs.Add(hl);
                                 }
 
 
@@ -981,7 +896,7 @@ namespace I2VISTools
                                         Undo = FormUndo(rb, oldVals),
                                         Do = FormRedo(rb, newVals)
                                     };
-                                    _history.Logs.Add(hl);
+                                    InitEditorHelper.History.Logs.Add(hl);
                                 }
 
                             }
@@ -1010,7 +925,7 @@ namespace I2VISTools
                                     Undo = FormUndo(rb, oldVals),
                                     Do = FormRedo(rb, newVals)
                                 };
-                                _history.Logs.Add(hl);
+                                InitEditorHelper.History.Logs.Add(hl);
 
 
                                 _graphModel.InvalidatePlot(false);
@@ -1034,7 +949,7 @@ namespace I2VISTools
                                     Undo = FormUndo(rb, oldVals),
                                     Do = FormRedo(rb, newVals)
                                 };
-                                _history.Logs.Add(hl);
+                                InitEditorHelper.History.Logs.Add(hl);
 
                                 _graphModel.InvalidatePlot(false);
                             }
@@ -1056,7 +971,7 @@ namespace I2VISTools
                                     Undo = FormUndo(rb, oldVals),
                                     Do = FormRedo(rb, newVals)
                                 };
-                                _history.Logs.Add(hl);
+                                InitEditorHelper.History.Logs.Add(hl);
 
                                 _graphModel.InvalidatePlot(false);
                             }
@@ -1078,7 +993,7 @@ namespace I2VISTools
                                     Undo = FormUndo(rb, oldVals),
                                     Do = FormRedo(rb, newVals)
                                 };
-                                _history.Logs.Add(hl);
+                                InitEditorHelper.History.Logs.Add(hl);
 
                                 _graphModel.InvalidatePlot(false);
                             }
@@ -1152,408 +1067,7 @@ namespace I2VISTools
 
             return gt;
         }
-
-        private void AttachChangeEvents(Geotherm termoBox)
-        {
-            termoBox.PropertyChanged += (sender, args) =>
-            {
-                if (args.PropertyName == "T0")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T0") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = curAnnot.X,
-                        Y = curAnnot.Y,
-                        Text = geoTherm.T0.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-                    _graphModel.InvalidatePlot(false);
-
-                }
-                if (args.PropertyName == "T1")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T1") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = curAnnot.X,
-                        Y = curAnnot.Y,
-                        Text = geoTherm.T1.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-                    _graphModel.InvalidatePlot(false);
-                }
-                if (args.PropertyName == "T2")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T2") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = curAnnot.X,
-                        Y = curAnnot.Y,
-                        Text = geoTherm.T2.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-                    _graphModel.InvalidatePlot(false);
-                }
-                if (args.PropertyName == "T3")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T3") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = curAnnot.X,
-                        Y = curAnnot.Y,
-                        Text = geoTherm.T3.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-                    _graphModel.InvalidatePlot(false);
-                }
-
-
-                if (args.PropertyName == "Apex0")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == geoTherm.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    ptSeries.Points.RemoveAt(0);
-                    ptSeries.Points.Insert(0, new DataPoint(geoTherm.Apex0.X, geoTherm.Apex0.Y));
-
-                    ptSeries.Points.RemoveAt(4);
-                    ptSeries.Points.Insert(4, new DataPoint(geoTherm.Apex0.X, geoTherm.Apex0.Y));
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T0") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = geoTherm.Apex0.X,
-                        Y = geoTherm.Apex0.Y,
-                        Text = geoTherm.T0.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-
-
-                    _graphModel.InvalidatePlot(false);
-                }
-
-                if (args.PropertyName == "Apex1")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == geoTherm.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    ptSeries.Points.RemoveAt(1);
-                    ptSeries.Points.Insert(1, new DataPoint(geoTherm.Apex1.X, geoTherm.Apex1.Y));
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T1") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = geoTherm.Apex1.X,
-                        Y = geoTherm.Apex1.Y,
-                        Text = geoTherm.T1.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-
-                    _graphModel.InvalidatePlot(false);
-                }
-
-                if (args.PropertyName == "Apex2")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == geoTherm.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    ptSeries.Points.RemoveAt(3);
-                    ptSeries.Points.Insert(3, new DataPoint(geoTherm.Apex2.X, geoTherm.Apex2.Y));
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T2") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = geoTherm.Apex2.X,
-                        Y = geoTherm.Apex2.Y,
-                        Text = geoTherm.T2.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-
-                    _graphModel.InvalidatePlot(false);
-                }
-
-                if (args.PropertyName == "Apex3")
-                {
-                    var geoTherm = sender as Geotherm;
-                    if (geoTherm == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == geoTherm.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    ptSeries.Points.RemoveAt(2);
-                    ptSeries.Points.Insert(2, new DataPoint(geoTherm.Apex3.X, geoTherm.Apex3.Y));
-
-                    PointAnnotation curAnnot =
-                        _graphModel.Annotations.FirstOrDefault(x => (string)x.Tag == geoTherm.Name + "T3") as PointAnnotation;
-                    if (curAnnot == null) return;
-
-                    var newAnot = new PointAnnotation
-                    {
-                        X = geoTherm.Apex3.X,
-                        Y = geoTherm.Apex3.Y,
-                        Text = geoTherm.T3.ToString(CultureInfo.CurrentCulture),
-                        Fill = OxyColors.Transparent,
-                        TextColor = OxyColors.Red,
-                        Tag = curAnnot.Tag
-                    };
-
-                    _graphModel.Annotations.Remove(curAnnot);
-                    _graphModel.Annotations.Add(newAnot);
-
-                    _graphModel.InvalidatePlot(false);
-                }
-
-            };
-        }
-
-        private void AttachChangeEvents(RockBox rockBox)
-        {
-            rockBox.PropertyChanged += (sender, args) =>
-            {
-
-                if (args.PropertyName == "RockId")
-                {
-                    AreaSeries arSerie = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rockBox.Name + "area") as AreaSeries;
-                    if (arSerie == null) return;
-                    
-                    var rockInd = (rockBox.RockId >= 0) ? rockBox.RockId : rockBox.RockId*-1; 
-                    var newRc = GraphConfig.Instace.RocksColor.FirstOrDefault(x => x.Index == rockInd);
-                    if (newRc == null) return;
-                    arSerie.Fill = newRc.Color;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rockBox.Name) as LineSeries;
-                    if (ptSeries == null) return;
-                    ptSeries.MarkerFill = newRc.Color;
-                }
-
-                if (args.PropertyName == "Apex0")
-                {
-                    var rBox = sender as RockBox; //todo по-моему это излишне, можно просто ссылаться на аргумент rockBox. Проверить!
-                    if (rBox == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    if (!rBox.FreezeLogging)
-                    {
-                        var x = ptSeries.Points[0].X;
-                        var y = ptSeries.Points[0].Y;
-
-                        var hl = new HistoryLog();
-                        hl.Undo = () =>
-                        {
-                            rBox.FreezeLogging = true;
-                            rBox.Apex0.X = x;
-                            rBox.Apex0.Y = y;
-                            rBox.FreezeLogging = false;
-                        };
-                        _history.Add(hl);
-                    }
-
-                    ptSeries.Points.RemoveAt(0);
-                    ptSeries.Points.Insert(0, new DataPoint(rBox.Apex0.X, rBox.Apex0.Y));
-
-                    ptSeries.Points.RemoveAt(4);
-                    ptSeries.Points.Insert(4, new DataPoint(rBox.Apex0.X, rBox.Apex0.Y));
-
-                    AreaSeries arSerie = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name + "area") as AreaSeries;
-                    if (arSerie == null) return;
-                    arSerie.Points.RemoveAt(0);
-                    arSerie.Points.Insert(0, new DataPoint(rBox.Apex0.X, rBox.Apex0.Y));
-
-                    _graphModel.InvalidatePlot(false);
-
-                }
-                if (args.PropertyName == "Apex1")
-                {
-                    var rBox = sender as RockBox;
-                    if (rBox == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    if (!rBox.FreezeLogging)
-                    {
-                        var hl = new HistoryLog();
-                        hl.Undo = () =>
-                        {
-                            rBox.FreezeLogging = true;
-                            rBox.Apex1 = new ModPoint(ptSeries.Points[1].X, ptSeries.Points[1].Y);
-                            rBox.FreezeLogging = false;
-                        };
-                        _history.Add(hl);
-                    }
-
-                    ptSeries.Points.RemoveAt(1);
-                    ptSeries.Points.Insert(1, new DataPoint(rBox.Apex1.X, rBox.Apex1.Y));
-
-
-                    AreaSeries arSerie = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name + "area") as AreaSeries;
-                    if (arSerie == null) return;
-                    arSerie.Points2.RemoveAt(0);
-                    arSerie.Points2.Insert(0, new DataPoint(rBox.Apex1.X, rBox.Apex1.Y));
-
-                    _graphModel.InvalidatePlot(false);
-
-                }
-                if (args.PropertyName == "Apex2")
-                {
-                    var rBox = sender as RockBox;
-                    if (rBox == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    if (!rBox.FreezeLogging)
-                    {
-                        var x = ptSeries.Points[3].X;
-                        var y = ptSeries.Points[3].Y;
-
-                        var hl = new HistoryLog();
-                        hl.Undo = () =>
-                        {
-                            rBox.FreezeLogging = true;
-                            rBox.Apex2.X = x;
-                            rBox.Apex2.Y = y;
-                            rBox.FreezeLogging = false;
-                        };
-                        _history.Add(hl);
-                    }
-
-                    ptSeries.Points.RemoveAt(3);
-                    ptSeries.Points.Insert(3, new DataPoint(rBox.Apex2.X, rBox.Apex2.Y));
-
-                    AreaSeries arSerie = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name + "area") as AreaSeries;
-                    if (arSerie == null) return;
-                    arSerie.Points.RemoveAt(1);
-                    arSerie.Points.Insert(1, new DataPoint(rBox.Apex2.X, rBox.Apex2.Y));
-
-                    _graphModel.InvalidatePlot(false);
-
-                    
-
-                }
-                if (args.PropertyName == "Apex3")
-                {
-                    var rBox = sender as RockBox;
-                    if (rBox == null) return;
-
-                    LineSeries ptSeries = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name) as LineSeries;
-                    if (ptSeries == null) return;
-
-                    if (!rBox.FreezeLogging)
-                    {
-                        var x = ptSeries.Points[2].X;
-                        var y = ptSeries.Points[2].Y;
-
-                        var hl = new HistoryLog
-                        {
-                            Undo = () =>
-                            {
-                                rBox.FreezeLogging = true;
-                                rBox.Apex3.X = x;
-                                rBox.Apex3.Y = y;
-                                rBox.FreezeLogging = false;
-                            }
-                        };
-
-                        _history.Add(hl);
-                    }
-
-                    ptSeries.Points.RemoveAt(2);
-                    ptSeries.Points.Insert(2, new DataPoint(rBox.Apex3.X, rBox.Apex3.Y));
-
-                    AreaSeries arSerie = _graphModel.Series.FirstOrDefault(x => x.Tag.ToString() == rBox.Name + "area") as AreaSeries;
-                    if (arSerie == null) return;
-                    arSerie.Points2.RemoveAt(1);
-                    arSerie.Points2.Insert(1, new DataPoint(rBox.Apex3.X, rBox.Apex3.Y));
-
-                    _graphModel.InvalidatePlot(false);
-
-                    
-
-                }
-
-            };
-        }
-
+        
         private bool IsPointInPolygon(List<Point> polygon, Point point)
         {
             bool isInside = false;
@@ -1772,19 +1286,19 @@ namespace I2VISTools
 
         private void InitUndoButton_OnClick(object sender, RoutedEventArgs e)
         {
-            //var currentUndo = _history.ShowNextUndo();
+            //var currentUndo = InitEditorHelper.History.ShowNextUndo();
             //if (currentUndo == null) return;
             //currentUndo.Undo();
 
-            _history.Undo();
+            InitEditorHelper.History.Undo();
 
             //_graphModel.InvalidatePlot(false);
         }
 
         private void InitRedoButton_OnClick(object sender, RoutedEventArgs e)
         {
-            _history.Redo();
-            //var currentRedo = _history.ShowNextRedo();
+            InitEditorHelper.History.Redo();
+            //var currentRedo = InitEditorHelper.History.ShowNextRedo();
             //if (currentRedo == null) return;
             //currentRedo.Do();
 
@@ -2080,242 +1594,7 @@ namespace I2VISTools
         {
 
         }
-
-        private void AttachMovingEvents(LineSeries points)
-        {
-            int indexOfPointToMove = -1;
-
-            // Subscribe to the mouse down event on the line series
-            points.MouseDown += (s, ev) =>
-            {
-                // only handle the left mouse button (right button can still be used to pan)
-                if (ev.ChangedButton == OxyMouseButton.Left)
-                {
-
-                    int indexOfNearestPoint = (int)Math.Round(ev.HitTestResult.Index);
-                    var nearestPoint = points.Transform(points.Points[indexOfNearestPoint]);
-
-                    // Check if we are near a point
-                    if ((nearestPoint - ev.Position).Length < 10)
-                    {
-                        // Start editing this point
-                        indexOfPointToMove = indexOfNearestPoint;
-                    }
-                    else
-                    {
-                        return;
-                    }
-
-
-                    // Change the linestyle while editing
-                    points.LineStyle = LineStyle.DashDot;
-
-                    _ruleX = new LineSeries();
-                    _ruleY = new LineSeries();
-
-                    _ruleX.Points.Add(new DataPoint(points.Points[indexOfPointToMove].X, _graphModel.Axes[0].ActualMaximum));
-                    _ruleX.Points.Add(new DataPoint(points.Points[indexOfPointToMove].X, points.Points[indexOfPointToMove].Y));
-                    _ruleX.LineStyle = LineStyle.Dot;
-                    _ruleX.StrokeThickness = 1;
-
-                    _ruleY.Points.Add(new DataPoint(_graphModel.Axes[1].ActualMinimum, points.Points[indexOfPointToMove].Y));
-                    _ruleY.Points.Add(new DataPoint(points.Points[indexOfPointToMove].X, points.Points[indexOfPointToMove].Y));
-                    _ruleY.LineStyle = LineStyle.Dot;
-                    _ruleY.StrokeThickness = 1;
-
-                    _ruleX.Color = OxyColors.Red;
-                    _ruleY.Color = OxyColors.Red;
-
-                    _graphModel.Series.Add(_ruleX);
-                    _graphModel.Series.Add(_ruleY);
-
-                    // Remember to refresh/invalidate of the plot
-                    _graphModel.InvalidatePlot(false);
-
-
-                    IBox rb;
-                    if (points.Tag.ToString().Contains("Geotherm"))
-                    {
-                        rb = _currentConfig.Geotherms.FirstOrDefault(x => x.Name == points.Tag.ToString());
-                    }
-                    else
-                    {
-                        rb = _currentConfig.RockBoxes.FirstOrDefault(x => x.Name == points.Tag.ToString());
-                    }
-                    
-                    
-                    if (rb != null)
-                    {
-                        rb.FreezeLogging = true;
-                        var hl = new HistoryLog();
-
-                        var x0 = rb.Apex0.X;
-                        var y0 = rb.Apex0.Y;
-                        var x1 = rb.Apex1.X;
-                        var y1 = rb.Apex1.Y;
-                        var x2 = rb.Apex2.X;
-                        var y2 = rb.Apex2.Y;
-                        var x3 = rb.Apex3.X;
-                        var y3 = rb.Apex3.Y;
-
-                        hl.Undo = () =>
-                        {
-                            rb.FreezeLogging = true;
-                            rb.Apex0.X = x0;
-                            rb.Apex0.Y = y0;
-                            rb.Apex1.X = x1;
-                            rb.Apex1.Y = y1;
-                            rb.Apex2.X = x2;
-                            rb.Apex2.Y = y2;
-                            rb.Apex3.X = x3;
-                            rb.Apex3.Y = y3;
-                            rb.FreezeLogging = false;
-                        };
-                        _history.Add(hl);
-                        
-                    }
-
-                    // Set the event arguments to handled - no other handlers will be called.
-                    ev.Handled = true;
-                }
-            };
-
-            points.MouseMove += (s, ev) =>
-            {
-                if (indexOfPointToMove >= 0)
-                {
-                    if (indexOfPointToMove == 4)
-                    {
-                        points.Points[0] = points.InverseTransform(ev.Position);
-                        //_graphModel.InvalidatePlot(false);
-                        //ev.Handled = true;
-                    }
-                    if (indexOfPointToMove == 0)
-                    {
-                        points.Points[4] = points.InverseTransform(ev.Position);
-                        //_graphModel.InvalidatePlot(false);
-                        //ev.Handled = true;
-                    }
-
-                    points.Points[indexOfPointToMove] = (ev.IsControlDown) ? AdjustDataPoint(points.InverseTransform(ev.Position), (int) _graphModel.Axes[0].ActualMinorStep, (int) _graphModel.Axes[1].ActualMinorStep) : points.InverseTransform(ev.Position);
-
-                    _ruleX.Points[0] = new DataPoint(points.Points[indexOfPointToMove].X, _graphModel.Axes[0].ActualMaximum);
-                    _ruleX.Points[1] = new DataPoint(points.Points[indexOfPointToMove].X, points.Points[indexOfPointToMove].Y);
-                    _ruleY.Points[0] = new DataPoint(Int32.MinValue, points.Points[indexOfPointToMove].Y);
-                    _ruleY.Points[1] = new DataPoint(points.Points[indexOfPointToMove].X, points.Points[indexOfPointToMove].Y);
-
-                    _graphModel.InvalidatePlot(false);
-                    ev.Handled = true;
-                }
-            };
-
-            points.MouseUp += (s, ev) =>
-            {
-                //var currentBox = areas[points.Tag.ToString()];
-
-               // IBox rb = (points.Tag.ToString().Contains("Geotherm")) ? _currentConfig.Geotherms.FirstOrDefault(x=>x.Name == points.Tag.ToString()) : _currentConfig.RockBoxes.FirstOrDefault(x => x.Name == points.Tag.ToString());
-                
-                IBox rb;
-
-                if ((points.Tag.ToString().Contains("Geotherm")))
-                {
-                    rb = _currentConfig.Geotherms.FirstOrDefault(x => x.Name == points.Tag.ToString());
-                }
-                else
-                {
-                    rb = _currentConfig.RockBoxes.FirstOrDefault(x => x.Name == points.Tag.ToString());
-                }
-
-                if (rb != null)
-                {
-
-                    if (indexOfPointToMove == 0 || indexOfPointToMove == 4)
-                    {
-                        rb.Apex0 = new ModPoint((Convert.ToInt32(points.Points[indexOfPointToMove].X) / 100) * 100, (Convert.ToInt32(points.Points[indexOfPointToMove].Y / 100) * 100));
-                    }
-                    if (indexOfPointToMove == 1)
-                    {
-                        rb.Apex1 = new ModPoint((Convert.ToInt32(points.Points[indexOfPointToMove].X) / 100) * 100, (Convert.ToInt32(points.Points[indexOfPointToMove].Y / 100) * 100));
-
-                    }
-                    if (indexOfPointToMove == 2)
-                    {
-                        rb.Apex3 = new ModPoint((Convert.ToInt32(points.Points[indexOfPointToMove].X) / 100) * 100, (Convert.ToInt32(points.Points[indexOfPointToMove].Y / 100) * 100));
-                    }
-                    if (indexOfPointToMove == 3)
-                    {
-                        rb.Apex2 = new ModPoint((Convert.ToInt32(points.Points[indexOfPointToMove].X) / 100) * 100, (Convert.ToInt32(points.Points[indexOfPointToMove].Y / 100) * 100));
-                    }
-
-                    if (_history.Logs != null && _history.Logs.Count > 0)
-                    {
-                        var hl = _history.Logs.Last();
-                        if (hl.Do == null)
-                        {
-                            var x0 = rb.Apex0.X;
-                            var y0 = rb.Apex0.Y;
-                            var x1 = rb.Apex1.X;
-                            var y1 = rb.Apex1.Y;
-                            var x2 = rb.Apex2.X;
-                            var y2 = rb.Apex2.Y;
-                            var x3 = rb.Apex3.X;
-                            var y3 = rb.Apex3.Y;
-
-                            hl.Do = () =>
-                            {
-                                rb.FreezeLogging = true;
-                                rb.Apex0.X = x0;
-                                rb.Apex0.Y = y0;
-                                rb.Apex1.X = x1;
-                                rb.Apex1.Y = y1;
-                                rb.Apex2.X = x2;
-                                rb.Apex2.Y = y2;
-                                rb.Apex3.X = x3;
-                                rb.Apex3.Y = y3;
-                                rb.FreezeLogging = false;
-                            };
-                        }
-                    }
-
-                    
-                    
-                    
-                    rb.FreezeLogging = false;
-                }
-
-                GeometryDataGrid.Items.Refresh();
-
-                _graphModel.Series.Remove(_ruleX);
-                _graphModel.Series.Remove(_ruleY);
-
-                // Stop editing
-                indexOfPointToMove = -1;
-                points.LineStyle = LineStyle.Solid;
-                _graphModel.InvalidatePlot(false);
-                ev.Handled = true;
-
-            };
-
-        }
-
-        private int AdjustValue(double value, int accuracy)
-        {
-            var rem = value % accuracy;
-            if (rem > accuracy/2d)
-            {
-                return Convert.ToInt32((value - rem) + accuracy);
-            }
-            else
-            {
-                return Convert.ToInt32(value - rem);
-            }
-        }
-
-        private DataPoint AdjustDataPoint(DataPoint pt, int xAccuracy, int yAccuracy)
-        {
-            return new DataPoint(AdjustValue(pt.X, xAccuracy), AdjustValue(pt.Y, yAccuracy) );
-        }
-
+        
         private void CommitInitButton_OnClick(object sender, RoutedEventArgs e)
         {
             if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
@@ -2333,7 +1612,13 @@ namespace I2VISTools
         private void LoadTxtSourceButton_OnClick(object sender, RoutedEventArgs e)
         {
             fbd = new FolderBrowserDialog();
-            fbd.SelectedPath = @"E:\Sergey\Univer\postgrad\results\inversed";
+
+            if (File.Exists("indir.txt"))
+            {
+                var lns = File.ReadAllLines("indir.txt");
+                if (lns.Length > 0) fbd.SelectedPath = lns[0];
+            }
+            
             fbd.ShowNewFolderButton = false;
 
             DialogResult result = fbd.ShowDialog();
@@ -2443,7 +1728,7 @@ namespace I2VISTools
                         if (ln.StartsWith("#")) continue;
                         if (string.IsNullOrWhiteSpace(ln)) continue;
                         
-                        var rgbarr = new int[] {0,0,0}; //todo фракционировать
+                        var rgbarr = new int[] {0,0,0, 255}; //todo фракционировать
                         overlayPoints.Add(rgbarr, new Dictionary<string, List<Point>>());
 
                         var lnSs = ln.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries );
@@ -2581,6 +1866,8 @@ namespace I2VISTools
 
             GraphConfig.Instace.YBegin = Config.Tools.ParseOrDefaultInt(ZBegBox.Text) * 1000;
             GraphConfig.Instace.YEnd = Config.Tools.ParseOrDefaultInt(ZEndBox.Text) * 1000;
+
+            GraphConfig.Instace.Transparency = Config.Tools.ParseOrDefaultInt( AlfaChannelBox.Text );
 
             return true;
         }
@@ -2920,9 +2207,13 @@ namespace I2VISTools
 
         private void GeothermButton_OnClick(object sender, RoutedEventArgs e)
         {
-            var gw = new GeothermWindow();
+            var gw = new GeothermWindow(_currentConfig, _graphModel);
             gw.Owner = this;
             gw.ShowDialog();
+
+            GeothermsDataGrid.Items.Refresh();
+           if (_graphModel != null) _graphModel.InvalidatePlot(false);
+
         }
 
         private void AdjustAxesScaleButton_OnClick(object sender, RoutedEventArgs e)
@@ -2999,8 +2290,8 @@ namespace I2VISTools
                 annotation.TextColor = (GeothermsBox.IsChecked == true) ? OxyColors.Red : OxyColors.Transparent;
             }
 
-            AttachMovingEvents(newThermoBox);
-            AttachChangeEvents(tb);
+            InitEditorHelper.AttachMovingEvents(_currentConfig, _graphModel, newThermoBox);
+            InitEditorHelper.AttachChangeEvents(_graphModel, tb);
             
             GeothermsDataGrid.Items.Refresh();
             _graphModel.InvalidatePlot(false);
@@ -3118,11 +2409,13 @@ namespace I2VISTools
         private void SelectOverlayButton_OnClick(object sender, RoutedEventArgs e)
         {
             var oofd = new OpenFileDialog();
+            
 
             if (oofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 overlayFile = oofd.FileName;
                 OverlayFileTextBox.Text = overlayFile;
+                
             }
 
         }

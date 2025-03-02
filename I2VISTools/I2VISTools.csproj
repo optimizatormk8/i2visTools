@@ -118,6 +118,7 @@
       <DependentUpon>PathBrowser.xaml</DependentUpon>
     </Compile>
     <Compile Include="InitClasses\IBox.cs" />
+    <Compile Include="InitClasses\InitEditorHelper.cs" />
     <Compile Include="ModelClasses\Marker.cs" />
     <Compile Include="ModelConfigClasses\Amir.cs" />
     <Compile Include="ModelConfigClasses\OutputAmirUnit.cs" />
@@ -295,6 +296,21 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources1.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="amir.t3c">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="facies">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="init.t3c">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="phases">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="picConfig">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

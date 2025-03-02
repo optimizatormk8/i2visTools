@@ -1,4 +1,7 @@
-﻿using System;
+﻿using OxyPlot;
+using OxyPlot.Annotations;
+using OxyPlot.Series;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -51,6 +54,6 @@ namespace I2VISTools.InitClasses
                 }
             }
         }
- 
+        
     }
 }

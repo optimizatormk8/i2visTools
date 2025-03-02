@@ -78,7 +78,7 @@
                                 <Label Content="Справа (км)" Height="20" FontSize="10" Padding="2" />
                             </StackPanel>
                         </StackPanel>
-                        <ribbon:RibbonButton LargeImageSource="../Images/textOut.png" Margin="5,0,0,0" Width="32" Height="40"  x:Name="TextoutButton" Click="ImplyButton_Click" ToolTip="Получить серию линейных термальных областей по заданной аппроксимации в текстовом формате" MouseOverBackground="#B1FF8B00" MouseOverBorderBrush="#FFFF8900"/>
+                        <ribbon:RibbonButton LargeImageSource="../Images/textOut.png" Margin="5,0,0,0" Width="32" Height="40"  x:Name="TextoutButton" Click="TextoutButton_Click"  ToolTip="Получить серию линейных термальных областей по заданной аппроксимации в текстовом формате" MouseOverBackground="#B1FF8B00" MouseOverBorderBrush="#FFFF8900"/>
                         <ribbon:RibbonButton LargeImageSource="../Images/implyGt32.png" Margin="0,0,5,0" Width="32" Height="40"  x:Name="ImplyButton" Click="ImplyButton_Click" ToolTip="Построить серию линейных термальных областей по заданной аппроксимации в текущей модели" MouseOverBackground="#B1FF8B00" MouseOverBorderBrush="#FFFF8900" />
                     </StackPanel> 
                 </GroupBox>

@@ -1,0 +1,59 @@
+/LOADFiLE_TYPE_AMIRAFILE_TYPE_XBEG_XEND_XRESOL_YBEG_YEND_YRESOL
+voac120.prn    b voacc120.txt   c    0.0 1.0 4001 0.0 1.0 401  
+voac120.prn    b voact120.txt   t    0.0 1.0 4001 0.0 1.0 401  
+voac130.prn    b voacc130.txt   c    0.0 1.0 4001 0.0 1.0 401  
+voac130.prn    b voact130.txt   t    0.0 1.0 4001 0.0 1.0 401  
+voac140.prn    b voacc140.txt   c    0.0 1.0 4001 0.0 1.0 401  
+voac140.prn    b voact140.txt   t    0.0 1.0 4001 0.0 1.0 401  
+voac150.prn    b voacc150.txt   c    0.0 1.0 4001 0.0 1.0 401  
+voac150.prn    b voact150.txt   t    0.0 1.0 4001 0.0 1.0 401  
+~
+
+/GENERAL_PARAMETERk
+2010-printmod
+1-timedir
+1-movemod
+1-tempmod
+1-markmod
+0-ratemod
+0-gridmod
+0-intermod
+0-intermod1
+2-outgrid
+2-densimod
+
+/ERROSION_SEDIMENTATION_PARAMETERS
+0-erosmod
+4000-eroslev
+3e-11-eroscon
+0e+00-eroskoe
+4000-sedilev
+1e-11-sedicon
+0e+00-sedikoe
+20-sedimcyc
+4000-waterlev
+0.30-slopemax
+
+/STOKES_CONTINUITY_PARAMETERS
+1e-04-DIVVMIN
+1e-06-STOKSMIN
+1-stoksmod
+1-presmod
+0-stoksfd
+1e+16-nubeg
+1e+25-nuend
+1e+18-nucontr
+100e+00-hidry
+0e+01-hidrl
+0e+00-strmin
+5e+28-strmax
+
+/HEAT_TRANSFER_PARAMETERS
+1e-08-HEATMIN
+0-heatmod
+0-heatfd
+1.0-heatdif
+14-frictyn
+1-adiabyn
+
+

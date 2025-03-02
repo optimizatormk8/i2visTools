@@ -452,7 +452,13 @@
                                 <TextBox x:Name="OverlayFileTextBox" MaxWidth="160" IsReadOnly="True" Padding="0" Height="18" />
                                 <Button x:Name="SelectOverlayButton" Width="20" Height="20" Content="..." Click="SelectOverlayButton_OnClick" />
                             </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Visibility="{Binding IsChecked, ElementName=OverlayParsCb, Converter={StaticResource b2v}}" >
+                                <Label Content="Прозрачность окружения (%)" Margin="5" />
+                                <TextBox x:Name="AlfaChannelBox" Width="50" Height="20" Text="50" PreviewTextInput="XSizeBox_PreviewTextInput" />
+                            </StackPanel>
                         </StackPanel>
+                        
 
                         <StackPanel Name="PrnParsStackPanel" Orientation="Horizontal" Grid.Row="1" Visibility="Collapsed">
                             <Label Name="PrnParLabel" Content="Отображаемый параметр  "  />

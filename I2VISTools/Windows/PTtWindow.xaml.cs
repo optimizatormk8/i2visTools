@@ -547,7 +547,7 @@ namespace I2VISTools.Windows
 
                 cb.Unchecked += (sender, args) =>
                 {
-                    var selectedPtt = pttModel.Series.FirstOrDefault(x => ((uint)x.Tag) == (uint)cb.Tag);
+                    var selectedPtt = pttModel.Series.FirstOrDefault(x => (Convert.ToString(x.Tag) != null && !Convert.ToString(x.Tag).Contains("facie")) && ((uint)x.Tag) == (uint)cb.Tag);
                     if (selectedPtt != null)
                     {
                         selectedPtt.IsVisible = false;
