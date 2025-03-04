@@ -58,8 +58,8 @@ namespace I2VISTools.Windows
         private int tm = 1388;
         private double t = 4e7;
 
-        private double Hc = 40000;
-        private double Tc = 600;
+        private double Hc = 50000;
+        private double Tc = 500;
 
         private const double MAX_DEPTH = 400000;
         private const double MIN_MANTLE_T = 1200;
@@ -67,10 +67,6 @@ namespace I2VISTools.Windows
 
         // точка условного пересечения адиабаты и океанической геотермы
         private DataPoint PtOcEnd;
-
-        private InitConfig _initConfig;
-
-        private PlotModel _graphModel;
 
         public GeothermWindow()
         {
@@ -238,11 +234,6 @@ namespace I2VISTools.Windows
 
         }
 
-        public GeothermWindow(InitConfig init, PlotModel graphModel) : this()
-        {
-            _initConfig = init;
-            _graphModel = graphModel;
-        }
 
         private void GeothermsPlotView_OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -744,31 +735,26 @@ namespace I2VISTools.Windows
             }
 
         }
-        
-        private List<Geotherm> GetGeothemrmsFromPlot()
-        {
-            var Hocean = 4500;
-            var Hair = 8000;
 
-            if (_initConfig != null)
-            {
-                Hair = Config.Tools.ParseOrDefaultInt(_initConfig.RockBoxes.Where(x => x.RockId == 0 && x.Apexes.All(a=>a.Y >= 0)).Max(x => x.Apex1.Y - x.Apex0.Y).ToString(), 8000);
-                Hocean = Config.Tools.ParseOrDefaultInt(_initConfig.RockBoxes.Where(x => x.RockId == 1).Max(x => x.Apex1.Y - x.Apex0.Y).ToString(), 4500);
-            }
+        private void ImplyButton_Click(object sender, RoutedEventArgs e)
+        {
+            //todo расхардкодить глубину океана и высоту воздуха (расчёт по маркерам или иниту или сделать опциональным)
+            var Hocean = 4500; 
+            var Hair = 8000;
 
             if (approxSerie == null || approxSerie.Points.Count == 0)
             {
                 MessageBox.Show("Похоже, вы ещё не сделали аппроксимацию. Нечего выводить.");
-                return null;
+                return;
             }
 
-            var leftStrings = LeftRangeBox.Text.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+            var leftStrings = LeftRangeBox.Text.Split(new [] {'-'}, StringSplitOptions.RemoveEmptyEntries);
             var rightStrings = RightRangeBox.Text.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (leftStrings.Count() != 2 || rightStrings.Count() != 2)
             {
                 MessageBox.Show("Неверный формат введеных данных в полях интервала окраины!");
-                return null;
+                return;
             }
 
             var lx1 = Config.Tools.ParseOrDefaultDouble(leftStrings[0], -1) * 1000;
@@ -778,8 +764,8 @@ namespace I2VISTools.Windows
 
             if (lx1 < 0 || lx2 < 0 || rx1 < 0 || rx2 < 0)
             {
-                MessageBox.Show("Произошла ошибка при попытке считать интервалы окраин.");
-                return null;
+                MessageBox.Show("Произошла ошибка при поытке считать интервалы окраин.");
+                return;
             }
 
             List<Geotherm> geotherms = new List<Geotherm>();
@@ -789,11 +775,11 @@ namespace I2VISTools.Windows
                 GetLinearFuncByTwoPoints(
                     new DataPoint(_continentalCrustSeries.Points[0].Y, _continentalCrustSeries.Points[0].X), // x и y меняем местами, поскольку отображение графика нестандартное (ось аргумента слева, а функции сверху)
                     new DataPoint(_continentalCrustSeries.Points[1].Y, _continentalCrustSeries.Points[1].X));
-
+            
             // уравнения геотермы континентальной литосферы
             var contLitEq =
                 GetLinearFuncByTwoPoints(
-                    new DataPoint(_continentalSeries.Points[0].Y, _continentalSeries.Points[0].X),
+                    new DataPoint(_continentalSeries.Points[0].Y, _continentalSeries.Points[0].X), 
                     new DataPoint(_continentalSeries.Points[1].Y, _continentalSeries.Points[1].X));
 
             // уравнение мантийной адиабаты
@@ -813,74 +799,10 @@ namespace I2VISTools.Windows
             {
                 var tarPt = approxSerie.Points.FirstOrDefault(x => x.Y > conPt.Y);
                 var ind = approxSerie.Points.IndexOf(tarPt);
-                if (ind != -1) approxSerie.Points.Insert(ind, new DataPoint(oceanicFunc(conPt.Y), conPt.Y));
+                if (ind != -1) approxSerie.Points.Insert(ind, new DataPoint(oceanicFunc(conPt.Y), conPt.Y)); 
             }
 
-            var mxsize = _initConfig == null ? 4000000 : _initConfig.Grid.Xsize; //размер модели по глубине
-            var mzsize = _initConfig == null ? 400000 : _initConfig.Grid.Ysize; //размер модели по глубине
-
-            //сперва формируем адиабату
-            var adiabateGt = new Geotherm
-            {
-                Apex0 = new ModPoint(0, 0),
-                Apex1 = new ModPoint(0, mzsize),
-                Apex2 = new ModPoint(mxsize, 0),
-                Apex3 = new ModPoint(mxsize, mzsize),
-
-                T0 = Math.Round(adiabateEq(0) + 273),
-                T1 = Math.Round(adiabateEq(mzsize) + 273),
-                T2 = Math.Round(adiabateEq(0) + 273),
-                T3 = Math.Round(adiabateEq(mzsize) + 273)
-            };
-            geotherms.Add(adiabateGt);
-
-            //теперь воду и воздух
-            var waterAirGt = new Geotherm
-            {
-                Apex0 = new ModPoint(0, 0),
-                Apex1 = new ModPoint(0, Hair + Hocean),
-                Apex2 = new ModPoint(mxsize, 0),
-                Apex3 = new ModPoint(mxsize, Hair + Hocean),
-
-                T0 = 273,
-                T1 = 273,
-                T2 = 273,
-                T3 = 273
-            };
-            geotherms.Add(waterAirGt);
-
-            //теперь континент слева
-            //сначала Мохо
-            var mohoLeftGt = new Geotherm
-            {
-                Apex0 = new ModPoint(0, Hair),
-                Apex1 = new ModPoint(0, Hair + Hc),
-                Apex2 = new ModPoint(lx1, Hair),
-                Apex3 = new ModPoint(lx1, Hair + Hc),
-
-                T0 = 273,
-                T1 = 273 + Tc,
-                T2 = 273,
-                T3 = 273 + Tc
-            };
-            geotherms.Add(mohoLeftGt);
-            //потом конт лит
-            var contLeftLitGt = new Geotherm
-            {
-                Apex0 = new ModPoint(0, Hair + Hc),
-                Apex1 = new ModPoint(0, Hair + Math.Round(conPt.Y)),
-                Apex2 = new ModPoint(lx1, Hair + Hc),
-                Apex3 = new ModPoint(lx1, Hair + Math.Round(conPt.Y)),
-
-                T0 = 273 + Tc,
-                T1 = Math.Round(contLitEq(conPt.Y)) + 273,
-                T2 = 273 + Tc,
-                T3 = Math.Round(contLitEq(conPt.Y)) + 273
-            };
-            geotherms.Add(contLeftLitGt);
-
-
-            // формирование температурных полей переходной зоны слева
+            // формирование температурных полей слева
             for (int i = 0; i < approxSerie.Points.Count - 1; i++)
             {
                 var gt = new Geotherm
@@ -908,37 +830,15 @@ namespace I2VISTools.Windows
                 geotherms.Add(gt);
             }
 
-            //формирование океанской геотермы
-            var oceanGt = new Geotherm
-            {
-                Apex0 = new ModPoint(lx2, Hair + Hocean),
-                Apex1 = new ModPoint(lx2, Hair + Hocean + Math.Round(approxSerie.Points.Last().Y)),
-                Apex2 = new ModPoint(rx1, Hair + Hocean),
-                Apex3 = new ModPoint(rx1, Hair + Hocean + Math.Round(approxSerie.Points.Last().Y)),
-
-                T0 = 273,
-                T1 = 273 + tm,
-                T2 = 273,
-                T3 = 273 + tm,
-
-                GeothermType = 4,
-                LeftOceanicAge = t,
-                RightOceanicAge = t,
-                ThermalDiffusivity = 1e-06
-
-            };
-            geotherms.Add(oceanGt);
-
-
-            // формирование температурных полей переходной зоны справа
+            // формирование температурных полей справа
             for (int i = 0; i < approxSerie.Points.Count - 1; i++)
             {
                 var gt = new Geotherm
                 {
-                    Apex0 = new ModPoint(rx1, Math.Round(approxSerie.Points[i].Y)),
-                    Apex1 = new ModPoint(rx1, Math.Round(approxSerie.Points[i + 1].Y)),
-                    Apex2 = new ModPoint(rx2, Math.Round(approxSerie.Points[i].Y)),
-                    Apex3 = new ModPoint(rx2, Math.Round(approxSerie.Points[i + 1].Y))
+                    Apex0 = new ModPoint(rx1, Math.Round(approxSerie.Points[i].Y) ),
+                    Apex1 = new ModPoint(rx1, Math.Round(approxSerie.Points[i + 1].Y) ),
+                    Apex2 = new ModPoint(rx2, Math.Round(approxSerie.Points[i].Y) ),
+                    Apex3 = new ModPoint(rx2, Math.Round(approxSerie.Points[i + 1].Y) )
                 };
 
                 var contTFunc = (gt.Apex3.Y <= Hc) ? crustEq : contLitEq;
@@ -951,80 +851,17 @@ namespace I2VISTools.Windows
 
                 gt.Apex0.Y += Hair + Hocean;
                 gt.Apex1.Y += Hair + Hocean;
-                gt.Apex2.Y += Hair;
+                gt.Apex2.Y += Hair; 
                 gt.Apex3.Y += Hair;
 
                 geotherms.Add(gt);
             }
-
-
-            //теперь континент справа
-            //сначала Мохо
-            var mohoRightGt = new Geotherm
-            {
-                Apex0 = new ModPoint(rx2, Hair),
-                Apex1 = new ModPoint(rx2, Hair + Hc),
-                Apex2 = new ModPoint(mxsize, Hair),
-                Apex3 = new ModPoint(mxsize, Hair + Hc),
-
-                T0 = 273,
-                T1 = 273 + Tc,
-                T2 = 273,
-                T3 = 273 + Tc
-            };
-            geotherms.Add(mohoRightGt);
-            //потом конт лит
-            var contRightLitGt = new Geotherm
-            {
-                Apex0 = new ModPoint(rx2, Hair + Hc),
-                Apex1 = new ModPoint(rx2, Math.Round( Hair + conPt.Y )),
-                Apex2 = new ModPoint(mxsize, Hair + Hc),
-                Apex3 = new ModPoint(mxsize, Math.Round(Hair + conPt.Y)),
-
-                T0 = 273 + Tc,
-                T1 = Math.Round( contLitEq(conPt.Y) + 273 ),
-                T2 = 273 + Tc,
-                T3 = Math.Round( contLitEq(conPt.Y) + 273 )
-            };
-            geotherms.Add(contRightLitGt);
-
-            for(int i=0; i < geotherms.Count; i++)
-            {
-                geotherms[i].Name = "Geotherm" + i;
-            }
-
-
-            return geotherms;
-        }
-
-        private void ImplyButton_Click(object sender, RoutedEventArgs e)
-        {
-            var geotherms = GetGeothemrmsFromPlot();
-            if (geotherms == null) return;
-
-            if (_initConfig == null) return;
-            _initConfig.Geotherms.Clear();
-
-            var gtsToDelete = _graphModel.Series.Where(x => Convert.ToString(x.Tag).Contains("Geotherm")).ToList();
-            foreach (var gt in gtsToDelete) _graphModel.Series.Remove(gt);
-
-            var annotsToDelete = _graphModel.Annotations.Where(x => Convert.ToString(x.Tag).Contains("Geotherm")).ToList();
-            foreach (var ann in annotsToDelete) _graphModel.Annotations.Remove(ann);
-
-            foreach (var gt in geotherms) _initConfig.Geotherms.Add(gt);
-            InitEditorHelper.AttachThermopointsEvents(_initConfig, _graphModel);
-            
-        }
-
-        private void TextoutButton_Click(object sender, RoutedEventArgs e)
-        {
-            var geotherms = GetGeothemrmsFromPlot();
-            if (geotherms == null) return;
 
             var totString = geotherms.Aggregate("", (current, geoTherm) => current + (String.Format("{0}       m{1}  m{2}  m{3}  m{4}  m{5}  m{6}  m{7}  m{8}   {9}   {10}   {11}   {12}\n", geoTherm.GeothermType, geoTherm.Apex0.X, geoTherm.Apex0.Y, geoTherm.Apex1.X, geoTherm.Apex1.Y, geoTherm.Apex2.X, geoTherm.Apex2.Y, geoTherm.Apex3.X, geoTherm.Apex3.Y, geoTherm.T0.ToString("0.#"), geoTherm.T1.ToString("0.#"), geoTherm.T2.ToString("0.#"), geoTherm.T3.ToString("0.#")).Replace(",", ".")));
 
             var tw = new TextWindow(totString);
             tw.Show();
         }
+
     }
 }

@@ -1540,9 +1540,6 @@ namespace I2VISTools.Windows
                         }
 
                     }
-
-                    File.WriteAllText("indir.txt", Path.GetDirectoryName(sfd.FileName));
-
                 }
             }
 

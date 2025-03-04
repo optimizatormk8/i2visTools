@@ -489,9 +489,7 @@ namespace I2VISTools.Tools
                 }
             }
 
-            var alChan = Convert.ToInt32( (GraphConfig.Instace.Transparency / 100f) * 255 );
-
-            List<int[]> cMap = GraphConfig.Instace.ColorMap.Select(x => new int[] { x.R, x.G, x.B, (overlayPoints != null) ? alChan : 255 }).ToList(); // массив цветов пород (его порядковый индекс - ID породы) 
+            List<int[]> cMap = GraphConfig.Instace.ColorMap.Select(x => new int[] { x.R, x.G, x.B }).ToList(); // массив цветов пород (его порядковый индекс - ID породы) 
             if (overlayPoints != null) cMap.AddRange(overlayPoints.Keys);
 
             // заполнение массива номерами (ID) пород 
@@ -558,8 +556,6 @@ namespace I2VISTools.Tools
                     var oind = cMap.IndexOf(rgbArr);
                     foreach (var pt in overlayPoints[rgbArr])
                     {
-
-                        if (pt.X < 0 || pt.Y < 0) continue;
                         var ox = Convert.ToInt32( pt.X/kX );
                         var oz = Convert.ToInt32( pt.Y/kZ );
 
@@ -619,7 +615,7 @@ namespace I2VISTools.Tools
                     red = cMap[mt][0];
                     green = cMap[mt][1];
                     blue = cMap[mt][2];
-                    alpha = cMap[mt][3];
+                    alpha = 255;
 
                     if (i >= pixels.Length) continue;
                     pixels[i] = (uint)((alpha << 24) + (red << 16) + (green << 8) + blue);
