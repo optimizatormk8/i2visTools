@@ -585,7 +585,7 @@ namespace I2VISTools.Windows
 
         private string AxisLabelKmFormat(double v)
         {
-            return (v/1000).ToString("0.##");
+            return (v).ToString("0.##");
         }
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
@@ -1064,16 +1064,20 @@ namespace I2VISTools.Windows
         private void PTtWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
             TrajTypeBox.ItemsSource = Enum.GetValues(typeof(LineStyle)).Cast<LineStyle>();
-            /*
-            TrandsColorList.ItemsSource = MarkersCollection.Keys;
-            TrandsColorList.Items.Refresh();
-             */
 
-            foreach (var tKey in MarkersCollection.Keys)
+            if (MarkersCollection != null)
             {
-                TrandsColorList.Items.Add(tKey);
+                foreach (var tKey in MarkersCollection.Keys)
+                {
+                    TrandsColorList.Items.Add(tKey);
+                }
             }
-         }
+            else
+            {
+                // Handle the case where MarkersCollection is null
+                MessageBox.Show("MarkersCollection is not initialized.");
+            }
+        }
 
         private void TrajTypeBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1529,6 +1533,76 @@ namespace I2VISTools.Windows
                 if (seria.Tag.ToString() == "facie") seria.IsVisible = false;
             }
             pttModel.InvalidatePlot(false);
+        }
+        public PTtWindow(List<Marker> markerList)
+        {
+            InitializeComponent();
+
+            var plotModel = new PlotModel { Title = "Температурный профиль" };
+            var lineSeries = new LineSeries
+            {
+                MarkerType = MarkerType.Circle,
+                MarkerSize = 4,
+                Smooth = true,
+                StrokeThickness = 2,
+                Title = "Температура"
+            };
+
+            foreach (var marker in markerList)
+            {
+                lineSeries.Points.Add(new DataPoint(marker.XPosition / 1000, marker.Temperature)); // XPosition в километрах
+            }
+
+            plotModel.Series.Add(lineSeries);
+
+            // Форматирование оси X в километрах
+            var xAxis = new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "X, км",
+                LabelFormatter = AxisLabelKmFormat,
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dash,
+                FontSize = 16
+            };
+
+            var yAxis = new LinearAxis
+            {
+                Position = AxisPosition.Left,
+                Title = "Температура, °C",
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dash,
+                FontSize = 16
+            };
+
+            plotModel.Axes.Add(xAxis);
+            plotModel.Axes.Add(yAxis);
+
+            // Добавление аннотаций для значений температуры на точках графика
+            foreach (var point in lineSeries.Points)
+            {
+                // Problem 1 and Problem 2: Remove unused variables
+                // Remove the following lines
+                // var t_stX = 0;
+                // var t_stZ = 0;
+
+                // Problem 3 and Problem 4: Use type name instead of instance reference
+                var annotation = new PointAnnotation
+                {
+                    X = point.X,
+                    Y = point.Y,
+                    Text = point.Y.ToString("0.0") + "°C",
+                    TextVerticalAlignment = OxyPlot.VerticalAlignment.Top,
+                    TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center,
+                    FontSize = 12,
+                    Fill = OxyColors.Transparent,
+                    Stroke = OxyColors.Transparent,
+                    TextColor = OxyColors.Black
+                };
+                plotModel.Annotations.Add(annotation);
+            }
+
+            PtTView.Model = plotModel;
         }
     }
 }

@@ -16,8 +16,6 @@
             <ColumnDefinition Width="200" />
         </Grid.ColumnDefinitions>
 
-        
-        
         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="3">
 
             <StackPanel Orientation="Vertical" >
@@ -65,17 +63,6 @@
             
             <TabItem Header="Ручной выбор маркеров" >
                 <Grid Name="CustomTrendsGrid">
-                    <!--<Grid.RowDefinitions>
-                        <RowDefinition Height="75" />
-                        <RowDefinition/>
-                        <RowDefinition Height="70" />
-                    </Grid.RowDefinitions>
-                    
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="200"/>
-                    </Grid.ColumnDefinitions>-->
-                    
                     <GroupBox Header="Выбор маркеров" >
                         <StackPanel  >
                             <StackPanel Orientation="Horizontal"> 
@@ -91,6 +78,7 @@
                             <ListBox MaxHeight="400" x:Name="MarkersList" />
                             <Button x:Name="DeleteSelected" Width="20" Height="20" Content="x" Margin="5" ToolTip="Удалить выбранную точку" Click="DeleteSelected_Click" />
                             <Button Width="100" Height="30" Margin="5" Content="Отследить" Name="PttTrackButton" Click="PttTrackButton_OnClick" />
+                            <Button Width="100" Height="30" Margin="5" Content="T профиль" Name="NewButton" Click="NewButton_Click" />
                         </StackPanel>
                     </GroupBox>
 

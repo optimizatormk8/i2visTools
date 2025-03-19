@@ -1587,5 +1587,24 @@ namespace I2VISTools.Windows
             var pptWnd = new PTtWindow(markersToPlot);
             pptWnd.Show();
         }
+        private void NewButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedPoints.Count <= 0)
+            {
+                MessageBox.Show("Вы не выбрали точки!");
+                return;
+            }
+
+            var temperatureProfile = new List<Marker>();
+
+            foreach (var point in _selectedPoints)
+            {
+                var marker = GetMarkersByPositionAndType(selectedFile, point);
+                temperatureProfile.Add(marker);
+            }
+
+            var temperatureWindow = new PTtWindow(temperatureProfile);
+            temperatureWindow.Show();
+        }
     }
 }
