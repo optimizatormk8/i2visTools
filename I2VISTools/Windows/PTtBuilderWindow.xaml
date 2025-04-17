@@ -28,9 +28,9 @@
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
                         <Label Content="X с"/>
-                        <TextBox Width="40" x:Name="StXTb" Text="1500" Height="18" />
+                        <TextBox Width="40" x:Name="StXTb" Text="0" Height="18" />
                         <Label Content=" по "/>
-                        <TextBox Width="40" x:Name="EndXTb" Text="3000" Height="18" />
+                        <TextBox Width="40" x:Name="EndXTb" Text="4000" Height="18" />
                         <Label Content="км"/>
                     </StackPanel>
 
@@ -38,7 +38,7 @@
                         <Label Content="Z с"/>
                         <TextBox Width="40" x:Name="StZTb" Text="0" Height="18" />
                         <Label Content=" по "/>
-                        <TextBox Width="40" x:Name="EndZTb" Text="300" Height="18" />
+                        <TextBox Width="40" x:Name="EndZTb" Text="700" Height="18" />
                         <Label Content="км"/>
                     </StackPanel>
 
@@ -79,6 +79,9 @@
                             <Button x:Name="DeleteSelected" Width="20" Height="20" Content="x" Margin="5" ToolTip="Удалить выбранную точку" Click="DeleteSelected_Click" />
                             <Button Width="100" Height="30" Margin="5" Content="Отследить" Name="PttTrackButton" Click="PttTrackButton_OnClick" />
                             <Button Width="100" Height="30" Margin="5" Content="T профиль" Name="NewButton" Click="NewButton_Click" />
+                            <CheckBox x:Name="TopOfLayerSetting" Content="Trace Top of Layer" />
+                            <CheckBox x:Name="BottomOfLayerSetting" Content="Trace Bottom of Layer" />
+                            <Button Name="TraceClosestPointsButton" Width="150" Height="30" Content="Trace Closest Points" Margin="5" Click="TraceClosestPointsButton_Click" />
                         </StackPanel>
                     </GroupBox>
 
@@ -99,6 +102,7 @@
                    
                    <CheckBox x:Name="FullFileCheckBox" Margin="10" Content="Подробный вых. файл"  />
 
+                    <Button Content="Trace Layer" Click="TraceLayerButton_Click" />
                     <Separator Height="20" />
 
 

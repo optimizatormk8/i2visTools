@@ -48,6 +48,9 @@ namespace I2VISTools.Windows
         private bool _isDragging = false;
         private RectangleAnnotation _currentRectangle;
 
+        // Explicitly specify the namespace for ToolTip to resolve ambiguity
+        private System.Windows.Controls.ToolTip _pointInfoToolTip = new System.Windows.Controls.ToolTip();
+
         public PTtBuilderWindow()
         {
             InitializeComponent();
@@ -283,6 +286,42 @@ namespace I2VISTools.Windows
                 _isDragging = false;
                 //model.Annotations.Remove(_currentRectangle);
                 
+            };
+
+            model.MouseMove += (sen, ev) =>
+            {
+                var pt = xAxe.InverseTransform(ev.Position.X, ev.Position.Y, yAxe);
+
+                if (pt.X >= stX && pt.X <= endX && pt.Y >= stZ && pt.Y <= endZ)
+                {
+                    int xIndex = Convert.ToInt32(pt.X);
+                    int yIndex = Convert.ToInt32(pt.Y);
+
+                    if (xIndex >= 0 && xIndex < arr.GetLength(1) && yIndex >= 0 && yIndex < arr.GetLength(0))
+                    {
+                        double value = arr[yIndex, xIndex];
+                        string info = $"X: {pt.X:F2}, Y: {pt.Y:F2}, Value: {value:F2}";
+
+                        if (_pointInfoToolTip.IsOpen)
+                        {
+                            _pointInfoToolTip.Content = info;
+                        }
+                        else
+                        {
+                            _pointInfoToolTip.Content = info;
+                            _pointInfoToolTip.IsOpen = true;
+                        }
+                    }
+                }
+                else
+                {
+                    _pointInfoToolTip.IsOpen = false;
+                }
+            };
+
+            model.MouseLeave += (sen, ev) =>
+            {
+                _pointInfoToolTip.IsOpen = false;
             };
 
             TipLabel.Visibility = Visibility.Visible;
@@ -772,7 +811,7 @@ namespace I2VISTools.Windows
             var gxkoef = BitConverter.ToDouble(doubleArr, 56); // следующие 8 байт - ускорение свободного падения по x
             var gykoef = BitConverter.ToDouble(doubleArr, 64); // следующие 8 байт - ускорение свободного падения по y
 
-            fs.Read(intArr, 0, 4); // продолжаем считывать с потока. теперь считываем 4 байта и записываем в массив для преобразования в int (intArr)
+            fs.Read(intArr, 0, 4); // продолжаем считывать с потока. теперь считываем 4 байта и записываем их в массив для преобразования в int (intArr)
             var rocknum = BitConverter.ToInt32(intArr, 0); // преобразуем эти 4 байта в int и записываем в переменную rocknum. Это кол-во типов пород (если вы новых в init'е не добавляли, то их 39)
             fs.Read(int64Arr, 0, 8); // считываем с потока 8 байт 
             var bondnum = BitConverter.ToInt64(int64Arr, 0); // преобразуем в long и записываем в переменную bondnum (не знаю что это такое, обычно оно 13600, но оно понадобится для смещения байтовой позиции дальше)
@@ -1587,6 +1626,8 @@ namespace I2VISTools.Windows
             var pptWnd = new PTtWindow(markersToPlot);
             pptWnd.Show();
         }
+
+        //построение Т профиля по выбранным точкам
         private void NewButton_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPoints.Count <= 0)
@@ -1605,6 +1646,118 @@ namespace I2VISTools.Windows
 
             var temperatureWindow = new PTtWindow(temperatureProfile);
             temperatureWindow.Show();
+        }
+        private void TraceLayerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedPoints.Count <= 0)
+            {
+                MessageBox.Show("Вы не выбрали точки!");
+                return;
+            }
+
+            var temperatureProfile = new List<Marker>();
+
+            foreach (var point in _selectedPoints)
+            {
+                var marker = GetMarkersByPositionAndType(selectedFile, point);
+                temperatureProfile.Add(marker);
+            }
+
+            var temperatureWindow = new PTtWindow(temperatureProfile);
+            temperatureWindow.Show();
+        }
+
+        private void TraceClosestPointsButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Log("TraceClosestPointsButton_Click started.");
+
+            if (_selectedPoints.Count == 0)
+            {
+                Logger.Log("No points selected for analysis.");
+                MessageBox.Show("Выберите точку для анализа!");
+                return;
+            }
+
+            var selectedPoint = _selectedPoints.First();
+            var selectedType = selectedPoint.Type;
+            Logger.Log($"Selected point type: {selectedType}");
+
+            try
+            {
+                // Find all points of the same type
+                var sameTypePoints = new List<ModPoint>();
+                for (int i = 0; i < arr.GetLength(0); i++)
+                {
+                    for (int j = 0; j < arr.GetLength(1); j++)
+                    {
+                        if ((int)arr[i, j] == selectedType)
+                        {
+                            sameTypePoints.Add(new ModPoint(j, i) { Type = selectedType });
+                        }
+                    }
+                }
+                Logger.Log($"Found {sameTypePoints.Count} points of the same type.");
+
+                // Find points closest to other types
+                var closestPoints = new List<ModPoint>();
+                foreach (var point in sameTypePoints)
+                {
+                    bool isClosest = false;
+                    for (int i = Math.Max(0, (int)point.Y - 1); i <= Math.Min(arr.GetLength(0) - 1, (int)point.Y + 1); i++)
+                    {
+                        for (int j = Math.Max(0, (int)point.X - 1); j <= Math.Min(arr.GetLength(1) - 1, (int)point.X + 1); j++)
+                        {
+                            if ((int)arr[i, j] != selectedType)
+                            {
+                                isClosest = true;
+                                break;
+                            }
+                        }
+                        if (isClosest) break;
+                    }
+                    if (isClosest) closestPoints.Add(point);
+                }
+                Logger.Log($"Found {closestPoints.Count} closest points to other types.");
+
+                // Trace top or bottom points
+                var tracedPoints = new List<ModPoint>();
+                if (TopOfLayerSetting.IsChecked == true)
+                {
+                    tracedPoints = closestPoints
+                        .GroupBy(p => p.X)
+                        .Select(g => g.OrderBy(p => p.Y).First())
+                        .ToList();
+                    Logger.Log($"Traced {tracedPoints.Count} top points of the layer.");
+                }
+                else if (BottomOfLayerSetting.IsChecked == true)
+                {
+                    tracedPoints = closestPoints
+                        .GroupBy(p => p.X)
+                        .Select(g => g.OrderByDescending(p => p.Y).First())
+                        .ToList();
+                    Logger.Log($"Traced {tracedPoints.Count} bottom points of the layer.");
+                }
+
+                // Generate temperature profile
+                var temperatureProfile = new List<Marker>();
+                foreach (var point in tracedPoints)
+                {
+                    var marker = GetMarkersByPositionAndType(selectedFile, point);
+                    temperatureProfile.Add(marker);
+                }
+                Logger.Log($"Generated temperature profile with {temperatureProfile.Count} markers.");
+
+                var temperatureWindow = new PTtWindow(temperatureProfile);
+                temperatureWindow.Show();
+                Logger.Log("Temperature profile window displayed.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error during point tracing: {ex.Message}");
+                MessageBox.Show("Произошла ошибка при анализе точек. Проверьте логи для подробностей.");
+            }
+
+            Logger.Log("TraceClosestPointsButton_Click completed.");
         }
     }
 }

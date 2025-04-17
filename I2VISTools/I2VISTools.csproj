@@ -306,6 +306,9 @@
     <Compile Include="CustomControls\PathBrowser.xaml.cs">
       <DependentUpon>PathBrowser.xaml</DependentUpon>
     </Compile>
+    <Compile Include="D:/Aspir_WORK/i2visTools/I2VISTools/Tools/\Logger.cs">
+      <Link>Logger.cs</Link>
+    </Compile>
     <Compile Include="InitClasses\IBox.cs" />
     <Compile Include="ModelClasses\Marker.cs" />
     <Compile Include="ModelConfigClasses\Amir.cs" />

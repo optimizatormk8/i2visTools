@@ -54,6 +54,7 @@ namespace I2VISTools.Windows
         private List<string> _labels;
 
         private Dictionary<uint, List<Marker>> MarkersCollection; 
+        private Dictionary<byte, List<Marker>> MarkersByLayer;
 
         public string PrnFilesPath { get; set; }
 
@@ -62,6 +63,8 @@ namespace I2VISTools.Windows
             InitializeComponent();
 
             MarkersCollection = new Dictionary<uint, List<Marker>> {{markerList[0].Id, markerList}};
+            MarkersByLayer = markerList.GroupBy(m => m.RockId)
+                                       .ToDictionary(g => g.Key, g => g.ToList());
 
             #region ptt rend
 
@@ -1581,12 +1584,6 @@ namespace I2VISTools.Windows
             // Добавление аннотаций для значений температуры на точках графика
             foreach (var point in lineSeries.Points)
             {
-                // Problem 1 and Problem 2: Remove unused variables
-                // Remove the following lines
-                // var t_stX = 0;
-                // var t_stZ = 0;
-
-                // Problem 3 and Problem 4: Use type name instead of instance reference
                 var annotation = new PointAnnotation
                 {
                     X = point.X,
@@ -1603,6 +1600,49 @@ namespace I2VISTools.Windows
             }
 
             PtTView.Model = plotModel;
+        }
+
+        public List<Marker> GetMarkersByLayer(byte layerId)
+        {
+            if (MarkersByLayer.TryGetValue(layerId, out var markers))
+            {
+                return markers;
+            }
+            return new List<Marker>();
+        }
+
+        private void OnLayerSelected(byte selectedLayerId)
+        {
+            var markers = GetMarkersByLayer(selectedLayerId);
+
+            // Update the UI or perform actions with the filtered markers
+            // For example, render the markers on the plot
+            RenderMarkers(markers);
+        }
+
+        private void RenderMarkers(List<Marker> markers)
+        {
+            // Clear existing series and annotations
+            pttModel.Series.Clear();
+            pttModel.Annotations.Clear();
+
+            var pttSeria = new LineSeries
+            {
+                MarkerType = MarkerType.Circle,
+                MarkerSize = 4,
+                Smooth = true,
+                StrokeThickness = 3,
+                Title = "Filtered Markers"
+            };
+
+            foreach (var marker in markers)
+            {
+                pttSeria.Points.Add(new DataPoint(marker.Temperature, marker.Pressure));
+            }
+
+            pttModel.Series.Add(pttSeria);
+            PtTView.Model = pttModel;
+            PtTView.InvalidatePlot(false);
         }
     }
 }
