@@ -812,7 +812,10 @@ namespace I2VISTools.Windows
                 file.WriteLine("ID маркера");
                 file.WriteLine("Время_(лет)\tX_(м)\tY_(м)\tДавление_(Па)\tТемператуа_(C)\tНомер_породы");
                 file.WriteLine("");
-                foreach (var markerIndex in MarkersCollection.Keys)
+                if (MarkersCollection == null)
+                {
+                    throw new InvalidOperationException("MarkersCollection is not initialized.");
+                }
                 {
                     file.WriteLine(markerIndex);
                     foreach (var currentMarker in MarkersCollection[markerIndex])
@@ -1643,6 +1646,28 @@ namespace I2VISTools.Windows
             pttModel.Series.Add(pttSeria);
             PtTView.Model = pttModel;
             PtTView.InvalidatePlot(false);
+        }
+        private void ExportTemperatureProfileToTxt(string filePath, List<Marker> markerList)
+        {
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                writer.WriteLine("X_(км)\tТемпература_(°C)");
+                foreach (var marker in markerList)
+                {
+                    writer.WriteLine($"{marker.XPosition / 1000:F2}\t{marker.Temperature:F2}");
+                }
+            }
+        }
+
+        private void ExportTemperatureProfileButton_Click(object sender, RoutedEventArgs e)
+        {
+            var sfd = new SaveFileDialog { Filter = "Текстовый файл|*.txt" };
+            if (sfd.ShowDialog() == true)
+            {
+                var fileName = sfd.FileName;
+                ExportTemperatureProfileToTxt(fileName, MarkersCollection.Values.SelectMany(m => m).ToList());
+                System.Windows.MessageBox.Show("Температурный профиль успешно экспортирован.", "Экспорт завершен", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
         }
     }
 }
