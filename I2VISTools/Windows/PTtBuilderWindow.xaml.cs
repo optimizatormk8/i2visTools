@@ -1140,7 +1140,7 @@ namespace I2VISTools.Windows
 
             if (_selectedIndexes.Contains(uintInd))
             {
-                MessageBox.Show("Данный индекс уже содержиться в списке!");
+                MessageBox.Show("Данный индекс уже содержится в списке!");
                 return;
             }
 
@@ -1667,10 +1667,10 @@ namespace I2VISTools.Windows
             using (var writer = new StreamWriter(filePath))
             {
                 writer.WriteLine("Температурный профиль");
-                writer.WriteLine("X (м)\tТемпература (°C)");
+                writer.WriteLine("X (м)\tZ (м)\tТемпература (°C)\tДавление (Па)");
                 foreach (var marker in temperatureProfile)
                 {
-                    writer.WriteLine($"{marker.XPosition}\t{marker.Temperature}");
+                    writer.WriteLine($"{marker.XPosition}\t{marker.YPosition}\t{marker.Temperature}\t{marker.Pressure}");
                 }
             }
         }
